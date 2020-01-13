@@ -1,0 +1,12 @@
+#: import rgba kivy.utils.rgba
+#: import mtx kivy.metrics
+#: import win kivy.core.window.Window
+
+BoxLayout:
+    orientation: 'vertical'
+    canvas.before:
+        Color:
+            rgba: rgba('#ffffff')
+        Rectangle:
+            pos: self.pos
+            size: self.size

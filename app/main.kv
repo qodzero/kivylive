@@ -1,0 +1,159 @@
+
+# import the rgba function to easily convert hex color format to kivy rgba
+# import the metrics package as mtx to use kivy's built in metrics format
+
+#: import rgba kivy.utils.rgba
+#: import mtx kivy.metrics
+#:kivy 1.4
+#: import MaterialWidget customs.customs.MaterialWidget
+#:import KivyLexer kivy.extras.highlight.KivyLexer
+
+<Container>:
+    canvas.before:
+        Color:
+            rgb: 0, 0, 0
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+<Catalog>:
+    language_box: language_box
+    screen_manager: screen_manager
+    auto_reload: chkbx.active
+    info_label: info_lbl
+    orientation: 'vertical'
+    BoxLayout:
+        padding: '5sp'
+        spacing: '3sp'
+        canvas:
+            Color:
+                # rgba: rgba('#35A0F3')
+                rgba: rgba('#455A64')
+            Rectangle:
+                size: self.size
+                pos: self.pos
+        size_hint: 1, None
+        height: '45sp'
+        Spinner:
+            id: recents
+            size_hint: None, 1
+            width: '108sp'
+            text: 'New UI'
+            values: [screen.name for screen in screen_manager.screens]
+            on_text: root.replace_kv(*args)
+            background_color: rgba('#35A0F3')
+            background_normal: ''
+        Widget:
+        BoxLayout:
+            size_hint: None, 1
+            width: '150sp'
+            Label:
+                text: "Live Reload"
+            CheckBox:
+                id: chkbx
+                size_hint_x: 1
+        Button:
+            size_hint: None, 1
+            width: '108sp'
+            text: 'Render Now'
+            background_color: rgba('#35A0F3')
+            background_normal: ''
+            on_release: root.change_kv(*args)
+    BoxLayout:
+        id: reactive_layout
+        orientation: 'vertical' if self.width < self.height else 'horizontal'
+
+        Splitter:
+            id: editor_pane
+            max_size: (reactive_layout.height if self.vertical else reactive_layout.width) - self.strip_size
+            min_size: sp(30) + self.strip_size
+            vertical: 1 if reactive_layout.width < reactive_layout.height else 0
+            sizable_from: 'bottom' if self.vertical else 'right'
+            size_hint: (1, None) if self.vertical else (None, 1)
+            size: 400, 400
+            on_vertical:
+                mid_size = self.max_size/2
+                if args[1]: self.height = mid_size
+                if not args[1]: self.width = mid_size
+            ScrollView:
+                id: kr_scroll
+                KivyRenderTextInput:
+                    catalog: root
+                    id: language_box
+                    auto_indent: True
+                    lexer: KivyLexer()
+                    size_hint: 1, None
+                    height: max(kr_scroll.height, self.minimum_height)
+                    valign: "top"
+                    on_text: root.schedule_reload()
+                    on_cursor: root.schedule_reload()
+        BoxLayout:
+            padding: '20dp'
+            canvas.before:
+                Color:
+                    rgba: rgba('#f2f2f2')
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+            MaterialWidget:
+                elevation: 4
+                ScreenManager:
+                    id: screen_manager
+                    Screen:
+                        name: "New UI"
+                        PlaygroundContainer:
+    BoxLayout:
+        padding: ['15sp','2sp']
+        size_hint_y: None
+        height: '24sp'
+        canvas.before:
+            Color:
+                rgba: rgba('#282C34')
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        Label:
+            id: ui_name
+            text: 'Untitled*'
+            shorten: True
+            shorten_from: 'left'
+            valign: 'middle'
+            text_size: self.size
+
+    FloatLayout:
+        size_hint: 1, None
+        height: 0
+        TextInput:
+            id:info_lbl
+            readonly: True
+            font_size: '14sp'
+            background_color: (0, 0, 0, 1)
+            foreground_color: (1, 1, 1, 1)
+            opacity:0
+            size_hint: 1, None
+            text_size: self.size
+            height: '150pt'
+            top: 0
+
+<KivyRenderTextInput>:
+    # background_active: ''
+    # background_normal: ''
+    # background_color: [1,1,1,1]
+    style_name: 'solarized-dark'
+
+<SplitterStrip>:
+    background_normal: ''
+    background_color: rgba('#35A0F322')
+    canvas.before:
+        Color:
+            rgba: [.8,.8,.8,.8]
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [0]
+        Color:
+            rgba: [1,1,1,1]
+        RoundedRectangle:
+            pos: self.pos
+            size: [self.size[0]-(.1*self.size[0]), self.size[1]]
+            radius: [0]

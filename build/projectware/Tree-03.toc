@@ -1,0 +1,9 @@
+('customs',
+ 'customs',
+ [],
+ 'DATA',
+ [('customs/customs_.kv', 'customs/customs_.kv', 'DATA'),
+  ('customs/customs.py', 'customs/customs.py', 'DATA'),
+  ('customs/__pycache__/customs.cpython-36.pyc',
+   'customs/__pycache__/customs.cpython-36.pyc',
+   'DATA')])
