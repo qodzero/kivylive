@@ -3,7 +3,7 @@ Kivy Live
 
 Description:
 -------------
-Simply put, this little app is developed to speedup the design/development of (kivy)[https://www.kivy.org] applications by allowing you to create
+Simply put, this little app is developed to speedup the design/development of [kivy](https://www.kivy.org) applications by allowing you to create
 the frontend of your app while simulteneously viewing your results.
 \
 \
@@ -12,7 +12,7 @@ As such, I wanted a way to be able to see where Im at in the design while design
 
 ## Credits
 
-Most of the code in this app is taken from the (kivy)[https://www.kivy.org] examples folder, so thank you guys for that.
+Most of the code in this app is taken from the [kivy](https://www.kivy.org) examples folder, so thank you guys for that.
 
 ## Installation
 
