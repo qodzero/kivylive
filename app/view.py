@@ -183,7 +183,7 @@ class Catalog(BoxLayout):
             if self._change_kv_ev is not None:
                 self._change_kv_ev.cancel()
             if self._change_kv_ev is None:
-                self._change_kv_ev = Clock.create_trigger(self.change_kv, 2)
+                self._change_kv_ev = Clock.create_trigger(self.change_kv, .5)
             self._change_kv_ev()
 
     def change_kv(self, *largs):
@@ -207,8 +207,19 @@ class Catalog(BoxLayout):
                 box = BoxLayout(orientation='vertical')
                 m.add_widget(box)
 
+                # Function to get user's current home directory
+                from os.path import expanduser
+                users_home = expanduser('~')
+                user_home_dir = os.path.join(users_home,'Desktop')
+                try:
+                    os.mkdir(os.path.join(user_home_dir,'KivyEditor'))
+                    user_home_dir = os.path.join(user_home_dir, 'KivyEditor')
+                except FileExistsError:
+                    user_home_dir = os.path.join(user_home_dir, 'KivyEditor')
+                    pass
+
                 name_box = BoxLayout(size_hint_y=.1)
-                fc = FileChooserListView(size_hint_y=.9)
+                fc = FileChooserListView(size_hint_y=.9,filters=['*kv'],rootpath=user_home_dir)
 
                 box.add_widget(name_box)
                 box.add_widget(fc)
