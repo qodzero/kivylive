@@ -29,7 +29,7 @@ CATALOG_ROOT = os.path.dirname(__file__)
 '''
 CONTAINER_KVS = os.path.join(CATALOG_ROOT, 'container_kvs')
 CONTAINER_CLASSES = [c[:-3] for c in os.listdir(CONTAINER_KVS)
-    if c.endswith('.kv')]
+                     if c.endswith('.kv')]
 
 
 class Container(BoxLayout):
@@ -80,13 +80,25 @@ class KivyRenderTextInput(CodeInput):
         return super(KivyRenderTextInput, self).keyboard_on_key_down(
             window, keycode, text, modifiers)
 
+class OpenFChooser(FileChooserListView):
+    users_home = os.path.expanduser('~')
+    user_home_dir = os.path.join(users_home, 'Desktop')
+    filename = None
+    def selected(self, filename):
+        print(f"Selected file name is {filename[0]}")
+        self.filename = filename[0]
+        return self.filename
+    def get_selected_file(self):
+        print(f'gotten filepath and name is {self.filename}')
+        return self.filename
+
 
 class Catalog(BoxLayout):
     '''Catalog of widgets. This is the root widget of the app. It contains
     a tabbed pain of widgets that can be displayed and a textbox where .kv
     language files for widgets being demoed can be edited.
 
-    The entire interface for the Catalog is defined in kivycatalog.kv,
+    The entire interface for the Catalog is defined in main.kv,
     although individual containers are defined in the container_kvs
     directory.
 
@@ -111,16 +123,20 @@ class Catalog(BoxLayout):
         self.show_kv(None, 'New UI')
         self.carousel = None
 
-        self.db = Database()
+        try:
+            self.db = Database()
+            all_kvs = self.db.get_kvs()
 
-        all_kvs = self.db.get_kvs()
+            print(len(all_kvs))
+            for kv in all_kvs:
+                kv = pickle.loads(kv[0])
+                name = kv.rsplit(os.path.sep, 1)[1].rsplit('.', 1)[0]
 
-        print(len(all_kvs))
-        for kv in all_kvs:
-            kv = pickle.loads(kv[0])
-            name = kv.rsplit(os.path.sep,1)[1].rsplit('.',1)[0]
+                self.ids.recents.values.append(name)
+        except:
+            print('Failed to initialize the DB')
 
-            self.ids.recents.values.append(name)
+
 
     def replace_kv(self, *args):
         inst, val = args
@@ -132,7 +148,7 @@ class Catalog(BoxLayout):
             all_kvs = self.db.get_kvs()
             for kv in all_kvs:
                 path = pickle.loads(kv[0])
-                name = path.rsplit(os.path.sep,1)[1].rsplit('.',1)[0]
+                name = path.rsplit(os.path.sep, 1)[1].rsplit('.', 1)[0]
                 if name == val:
                     # TODO - Allow duplicate names
                     target = path
@@ -156,6 +172,116 @@ class Catalog(BoxLayout):
 
             except Exception as e:
                 self.show_error(e)
+
+    def update_name_open_file(self, name: str, modal):
+        """Update the name of the current file
+
+        Parameters
+        ----------
+        name : str
+            the name of  the file to save
+
+        modal: :class kivy.uix.modalview.ModalView
+            An instance of the kivy modalview containing the name data
+
+        Returns
+        -------
+        None
+
+        """
+        modal.dismiss()
+        if not name.endswith('.kv'):
+            name = '.'.join([name, 'kv'])
+
+        ui_name = self.ids.ui_name
+        ui_name.text = name
+        new_sp_val = name.rsplit(os.path.sep, 1)[1].rsplit('.', 1)[0]
+        self.ids.recents.values.append(new_sp_val)
+        self.ids.recents.text = new_sp_val
+        try:
+
+
+            if ui_name == 'New UI':
+                self.ids.ui_name.text = 'Untitled*'
+            else:
+                self.ids.ui_name.text = str(name)
+                save_path = name
+                # Saving the aabsolute filepath to a pickle object
+                dump = pickle.dumps(save_path)
+                print(f"Full path of store is  {save_path}")
+                all = self.db.get_kvs()
+                kvs = [x[0] for x in all]
+
+                if dump not in kvs:
+
+                    if self.db.add_kv(dump):
+                        print("Successfully added kivy file path to db")
+                    else:
+                        print("Failed to save kivy file to db")
+
+                with open(name, 'rb') as file:
+                    self.language_box.text = file.read().decode('utf8')
+                if self._change_kv_ev is not None:
+                    self._change_kv_ev.cancel()
+
+
+
+            # self.change_kv()
+            # reset undo/redo history
+            self.language_box.reset_undo()
+
+        except Exception as e:
+            self.show_error(e)
+        # self.change_kv()
+
+    def change_kv_open_file(self, *largs):
+        txt = self.language_box.text
+        kv_container = self.screen_manager.current_screen.children[0]
+        try:
+            parser = Parser(content=txt)
+            kv_container.clear_widgets()
+            widget = Factory.get(parser.root.name)()
+            Builder._apply_rule(widget, parser.root, parser.root)
+            kv_container.add_widget(widget)
+
+            name = self.ids.ui_name.text
+            save_path = name
+            dump = pickle.dumps(save_path)
+            all = self.db.get_kvs()
+            kvs = [x[0] for x in all]
+
+            if dump not in kvs:
+                self.db.add_kv(dump)
+
+            with open(save_path, 'w') as f:
+                f.write(txt)
+        except:
+            pass
+        # print(absfilepathname)
+
+    def load_kv(self):
+
+        m = ModalView(size_hint=[.6, .7])
+        box = BoxLayout(orientation='vertical')
+        m.add_widget(box)
+
+        name_box = BoxLayout(size_hint_y=.1)
+
+        fc = OpenFChooser()
+        box.add_widget(name_box)
+        box.add_widget(fc)
+        submit = Button(text='open',background_color=[1,1,1,1],background_normal='',color=[0,0,0,1],size_hint_x=.2)
+        submit.bind(on_press=lambda x: self.update_name_open_file(fc.get_selected_file(),m))
+        # submit.bind(on_press= lambda x: self.show_kv(None,'New UI'))
+        name_box.add_widget(submit)
+
+        # print(fc.get_selected_file())
+
+
+
+        m.open()
+
+
 
 
     def show_kv(self, instance, value):
@@ -202,30 +328,32 @@ class Catalog(BoxLayout):
             kv_container.add_widget(widget)
 
             name = self.ids.ui_name.text
+            print(f'The whatever name is {name}')
             if name == 'Untitled*':
-                m = ModalView(size_hint=[.6,.7])
+                m = ModalView(size_hint=[.6, .7])
                 box = BoxLayout(orientation='vertical')
                 m.add_widget(box)
 
                 # Function to get user's current home directory
                 from os.path import expanduser
                 users_home = expanduser('~')
-                user_home_dir = os.path.join(users_home,'Desktop')
+                user_home_dir = os.path.join(users_home, 'Desktop')
                 try:
-                    os.mkdir(os.path.join(user_home_dir,'KivyEditor'))
+                    os.mkdir(os.path.join(user_home_dir, 'KivyEditor'))
                     user_home_dir = os.path.join(user_home_dir, 'KivyEditor')
                 except FileExistsError:
-                    user_home_dir = os.path.join(user_home_dir, 'KivyEditor')
+                    # user_home_dir = os.path.join(user_home_dir, 'KivyEditor')
                     pass
 
                 name_box = BoxLayout(size_hint_y=.1)
-                fc = FileChooserListView(size_hint_y=.9,filters=['*kv'],rootpath=user_home_dir)
+                fc = FileChooserListView(size_hint_y=.9, filters=['*kv'], rootpath=user_home_dir)
 
                 box.add_widget(name_box)
                 box.add_widget(fc)
 
                 tinput = TextInput(multiline=False, size_hint_x=.8)
-                submit = Button(text='Save', background_color=[1,1,1,1], background_normal='', color=[0,0,0,1], size_hint_x=.2)
+                submit = Button(text='Save', background_color=[1, 1, 1, 1], background_normal='', color=[0, 0, 0, 1],
+                                size_hint_x=.2)
 
                 tinput.bind(on_text_validate=lambda x: self.update_name(os.path.join(fc.path, tinput.text), m))
                 submit.bind(on_release=lambda x: self.update_name(os.path.join(fc.path, tinput.text), m))
@@ -242,7 +370,7 @@ class Catalog(BoxLayout):
 
                 if dump not in kvs:
                     self.db.add_kv(dump)
-                    
+
                 with open(save_path, 'w') as f:
                     f.write(txt)
 
@@ -273,14 +401,14 @@ class Catalog(BoxLayout):
 
         ui_name = self.ids.ui_name
         ui_name.text = name
-        new_sp_val = name.rsplit(os.path.sep,1)[1].rsplit('.',1)[0]
+        new_sp_val = name.rsplit(os.path.sep, 1)[1].rsplit('.', 1)[0]
         self.ids.recents.values.append(new_sp_val)
         self.ids.recents.text = new_sp_val
         self.change_kv()
 
     def show_error(self, e):
         self.info_label.text = str(e).encode('utf-8')
-        self.anim = Animation(top=190.0, opacity=1, d=2, t='in_back') +\
-            Animation(top=190.0, d=3) +\
-            Animation(top=0, opacity=0, d=2)
+        self.anim = Animation(top=190.0, opacity=1, d=2, t='in_back') + \
+                    Animation(top=190.0, d=3) + \
+                    Animation(top=0, opacity=0, d=2)
         self.anim.start(self.info_label)

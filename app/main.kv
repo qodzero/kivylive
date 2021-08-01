@@ -8,6 +8,13 @@
 #: import MaterialWidget customs.customs.MaterialWidget
 #:import KivyLexer kivy.extras.highlight.KivyLexer
 
+<OpenFChooser>:
+    id: filechooser
+    on_selection : root.selected(filechooser.selection)
+    filters: ['*kv']
+    size_hint_y: .9
+    rootpath: root.user_home_dir
+
 <Container>:
     canvas.before:
         Color:
@@ -34,6 +41,14 @@
                 pos: self.pos
         size_hint: 1, None
         height: '45sp'
+        Button:
+            text: 'Open'
+            size_hint: None, 1
+            width: '108sp'
+            background_color: rgba('#35A0F3')
+            background_normal: ''
+            on_release: root.load_kv()
+
         Spinner:
             id: recents
             size_hint: None, 1
@@ -76,6 +91,7 @@
                 if args[1]: self.height = mid_size
                 if not args[1]: self.width = mid_size
             ScrollView:
+                # Kivy Code Editor Panel
                 id: kr_scroll
                 KivyRenderTextInput:
                     catalog: root
@@ -102,7 +118,9 @@
                     Screen:
                         name: "New UI"
                         PlaygroundContainer:
+
     BoxLayout:
+        #Footer with current Edit Filepath
         padding: ['15sp','2sp']
         size_hint_y: None
         height: '24sp'
