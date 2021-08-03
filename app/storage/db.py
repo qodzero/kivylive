@@ -9,15 +9,25 @@ class Database(object):
         self.datapath = os.path.join(home, 'Documents','.kivylive')
 
         if not os.path.exists(self.datapath):
-            os.mkdir(self.datapath)
+            try:
+                os.mkdir(self.datapath)
+            except:
+                print('failed to init directory structure')
 
             conn = sqlite3.connect(os.path.join(self.datapath, 'db.sqlite'))
 
-            sql = 'CREATE TABLE kvdata(id integer primary key, path text not null)'
+            sql = 'CREATE TABLE kvdata (id integer primary key, path text not null)'
 
             cur = conn.cursor()
-            cur.execute(sql)
+            result = cur.execute(sql)
+            
+            if result:
+                print("Successfully initialized the db")
+            else:
+                print("Failed to Initialize the db")
             conn.commit()
+        else:
+            print('Skipping as directory exists')
 
     def db_connect(self):
         """Connect to the database and return the connection
@@ -48,6 +58,7 @@ class Database(object):
         """
         conn = self.db_connect()
         cur = conn.cursor()
+        # print(f'type is {type(path)} and {path}')
         sql = 'INSERT INTO kvdata(path) VALUES(?)'
 
         try:
